@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mapa de Autorreflexão — RNA e Autismo | Psicologias em Dia</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{font-family:'Libre Baskerville','Georgia',serif;-webkit-font-smoothing:antialiased;background:#f7f3ee;overflow-x:hidden}
+  button{font-family:inherit;cursor:pointer}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .fade-up{animation:fadeUp 0.35s ease forwards}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+function useAutoResize() {
+  const ref = useRef(null);
+  const notify = useCallback(() => {
+    if (!ref.current) return;
+    const h = ref.current.scrollHeight + 20;
+    window.parent.postMessage({ type: "resize", height: h }, "*");
+    try { if (window.frameElement) window.frameElement.style.height = h + "px"; } catch(e) {}
+  }, []);
+  useEffect(() => {
+    notify();
+    const obs = new MutationObserver(notify);
+    if (ref.current) obs.observe(ref.current, { childList: true, subtree: true, attributes: true });
+    window.addEventListener("resize", notify);
+    return () => { obs.disconnect(); window.removeEventListener("resize", notify); };
+  }, [notify]);
+  return ref;
+}
+
+const MAPS = {
+  antes: {
+    key: "antes",
+    label: "ANTES DA LEITURA",
+    tab: "\u{1F50D} Antes da Leitura",
+    color: "#5B2C8E",
+    icon: "\u{1F50D}",
+    subtitle: "O que voc\u00ea traz sobre esse tema?",
+    intro: "Antes de mergulhar no artigo, responda com honestidade. N\u00e3o \u00e9 um teste de conhecimento \u2014 \u00e9 um retrato das suas percep\u00e7\u00f5es atuais.",
+    resultTitle: "Seu Ponto de Partida",
+    resultSubtitle: "Um retrato das suas percep\u00e7\u00f5es antes da leitura.",
+    cta: "Agora, leia o artigo com calma. Quando terminar, volte aqui e responda o mapa \u201CDepois da Leitura\u201D \u2014 observe o que mudou na sua compreens\u00e3o.",
+    ctaButton: "\u2193 Boa leitura! \u2193",
+    dimensions: [
+      {
+        id: "compreensao", label: "Compreens\u00e3o do Autismo", icon: "\u{1F9E9}", color: "#5B2C8E",
+        tagline: "O que sei sobre TEA?",
+        questions: [
+          "Sei que o autismo n\u00e3o \u00e9 uma condi\u00e7\u00e3o \u00fanica, mas um espectro com causas e manifesta\u00e7\u00f5es muito diversas.",
+          "Entendo que existe uma diferen\u00e7a entre autismo de base comportamental e autismo causado por muta\u00e7\u00f5es gen\u00e9ticas espec\u00edficas.",
+          "Consigo distinguir entre tratar sintomas (como ansiedade ou ins\u00f4nia) e tratar a causa biol\u00f3gica de uma condi\u00e7\u00e3o.",
+          "Tenho alguma familiaridade com termos como \u201Cgen\u00e9tica\u201D, \u201CDNA\u201D e \u201CRNA\u201D, mesmo que b\u00e1sica.",
+        ],
+        feedback: {
+          low: "A maioria das pessoas sabe pouco sobre a complexidade gen\u00e9tica do autismo \u2014 e isso \u00e9 completamente normal. O artigo foi escrito justamente para tornar esse universo acess\u00edvel. Preste aten\u00e7\u00e3o especial \u00e0 se\u00e7\u00e3o que explica por que n\u00e3o existe \u201Cum\u201D autismo.",
+          mid: "Voc\u00ea j\u00e1 possui uma base. A leitura pode ajudar a refinar distin\u00e7\u00f5es importantes \u2014 como a diferen\u00e7a entre haploinsufici\u00eancia e ganho de fun\u00e7\u00e3o.",
+          high: "Sua compreens\u00e3o parece consistente. Leia o artigo buscando as nuances t\u00e9cnicas \u2014 especialmente como cada ferramenta molecular atua de forma diferente.",
+        },
+      },
+      {
+        id: "ciencia", label: "Abertura \u00e0 Ci\u00eancia", icon: "\u{1F52C}", color: "#2E75B6",
+        tagline: "Como me relaciono com informa\u00e7\u00e3o cient\u00edfica?",
+        questions: [
+          "Consigo ler artigos cient\u00edficos ou de divulga\u00e7\u00e3o sem desistir quando encontro termos t\u00e9cnicos.",
+          "Acredito que a ci\u00eancia avan\u00e7a por etapas e que resultados promissores n\u00e3o significam curas imediatas.",
+          "Busco fontes confi\u00e1veis quando quero entender um tema de sa\u00fade, ao inv\u00e9s de depender apenas de redes sociais.",
+          "Sinto curiosidade genu\u00edna por descobertas cient\u00edficas, mesmo em \u00e1reas fora do meu dom\u00ednio.",
+        ],
+        feedback: {
+          low: "A ci\u00eancia pode parecer intimidante, mas o artigo usa met\u00e1foras (f\u00e1brica, quebra-cabe\u00e7as, m\u00edssil molecular) para traduzir conceitos complexos. Leia sem press\u00e3o de entender tudo \u2014 cada camada absorvida j\u00e1 \u00e9 ganho.",
+          mid: "Voc\u00ea j\u00e1 tem abertura \u00e0 ci\u00eancia. O artigo pode ser uma boa oportunidade para exercitar a leitura de termos t\u00e9cnicos com apoio do gloss\u00e1rio inclu\u00eddo.",
+          high: "Sua rela\u00e7\u00e3o com informa\u00e7\u00e3o cient\u00edfica \u00e9 um recurso valioso. Aproveite o artigo para aprofundar mecanismos espec\u00edficos como ASOs, SINEUPs e edi\u00e7\u00e3o por ADAR.",
+        },
+      },
+      {
+        id: "etica", label: "Sensibilidade \u00c9tica", icon: "\u{1F49A}", color: "#27AE60",
+        tagline: "Como penso sobre neurodiversidade e tratamento?",
+        questions: [
+          "Acredito que respeitar a neurodiversidade e buscar aliviar o sofrimento de condi\u00e7\u00f5es graves n\u00e3o s\u00e3o posi\u00e7\u00f5es contradit\u00f3rias.",
+          "Entendo que nem todo autismo \u201Cprecisa\u201D de corre\u00e7\u00e3o \u2014 mas que formas sindr\u00f4micas graves envolvem sofrimento f\u00edsico real.",
+          "Consigo refletir sobre quest\u00f5es \u00e9ticas em sa\u00fade sem cair em posi\u00e7\u00f5es extremas (tudo \u00e9 bom ou tudo \u00e9 perigoso).",
+          "Penso que o acesso a tratamentos avan\u00e7ados deveria ser uma preocupa\u00e7\u00e3o coletiva, n\u00e3o apenas individual.",
+        ],
+        feedback: {
+          low: "Quest\u00f5es \u00e9ticas sobre neurodiversidade s\u00e3o complexas e \u00e9 normal ter d\u00favidas. O artigo dedica uma se\u00e7\u00e3o inteira a esse tema, distinguindo com clareza o que \u00e9 respeito \u00e0 diferen\u00e7a e o que \u00e9 al\u00edvio de sofrimento org\u00e2nico.",
+          mid: "Voc\u00ea j\u00e1 demonstra sensibilidade \u00e9tica. A leitura pode ajudar a articular melhor essa posi\u00e7\u00e3o, especialmente na distin\u00e7\u00e3o entre \u201Cnormalizar\u201D e \u201Capaziguar sofrimento\u201D.",
+          high: "Sua reflex\u00e3o \u00e9tica \u00e9 madura. Veja no artigo como a quest\u00e3o econ\u00f4mica (custo das terapias N-of-1) adiciona uma camada de justi\u00e7a social a esse debate.",
+        },
+      },
+    ],
+  },
+  depois: {
+    key: "depois",
+    label: "AP\u00d3S A LEITURA",
+    tab: "\u{1F331} Depois da Leitura",
+    color: "#C0392B",
+    icon: "\u{1F331}",
+    subtitle: "O que a leitura transformou?",
+    intro: "Agora que leu o artigo, responda com sinceridade. Observe se alguma compreens\u00e3o mudou \u2014 mesmo que sutilmente.",
+    resultTitle: "Seu Mapa P\u00f3s-Leitura",
+    resultSubtitle: "Compare com o resultado anterior. Onde a leitura moveu voc\u00ea?",
+    cta: "As diferen\u00e7as entre os dois mapas revelam onde a leitura ampliou sua compreens\u00e3o. Ciência \u00e9 constru\u00e7\u00e3o cont\u00ednua \u2014 assim como o autoconhecimento.",
+    ctaButton: null,
+    dimensions: [
+      {
+        id: "letramento", label: "Letramento Molecular", icon: "\u{1F9EC}", color: "#C0392B",
+        tagline: "Entendo a l\u00f3gica das terapias de RNA?",
+        questions: [
+          "Consigo explicar, em termos simples, a diferen\u00e7a entre terapia g\u00eanica (que altera o DNA) e terapia de RNA (que corrige a leitura).",
+          "Entendo por que os ASOs s\u00e3o comparados a \u201Cm\u00edsseis moleculares\u201D \u2014 s\u00e3o projetados para alvos espec\u00edficos.",
+          "Compreendo que haploinsufici\u00eancia (prote\u00edna insuficiente) e ganho de fun\u00e7\u00e3o (prote\u00edna t\u00f3xica) pedem estrat\u00e9gias opostas.",
+          "Entendo por que a barreira hematoenecf\u00e1lica \u00e9 o maior obst\u00e1culo pr\u00e1tico dessas terapias.",
+        ],
+        feedback: {
+          low: "Esses conceitos s\u00e3o novos para a maioria das pessoas. Releia com calma as se\u00e7\u00f5es sobre ferramentas moleculares e consulte o gloss\u00e1rio \u2014 cada releitura sedimenta uma camada a mais de compreens\u00e3o.",
+          mid: "Voc\u00ea absorveu os fundamentos. Para consolidar, tente explicar a algu\u00e9m como funciona um ASO \u2014 ensinar \u00e9 a forma mais poderosa de aprender.",
+          high: "Seu letramento molecular cresceu significativamente. Voc\u00ea agora tem base para acompanhar not\u00edcias sobre terapias de RNA com olhar cr\u00edtico e informado.",
+        },
+      },
+      {
+        id: "critico", label: "Pensamento Cr\u00edtico", icon: "\u2696\uFE0F", color: "#E67E22",
+        tagline: "Consigo avaliar promessas e limites?",
+        questions: [
+          "Entendo que \u201Cprova de conceito\u201D n\u00e3o significa \u201Ccura dispon\u00edvel\u201D \u2014 h\u00e1 etapas entre o laborat\u00f3rio e o paciente.",
+          "Consigo distinguir entre entusiasmo cient\u00edfico leg\u00edtimo e promessas exageradas da m\u00eddia.",
+          "Reconhe\u00e7o que os obst\u00e1culos (custo, entrega, janela de interven\u00e7\u00e3o) s\u00e3o t\u00e3o reais quanto os avan\u00e7os.",
+          "Percebo que o diagn\u00f3stico gen\u00e9tico precoce \u00e9 condi\u00e7\u00e3o fundamental para que essas terapias alcancem efic\u00e1cia m\u00e1xima.",
+        ],
+        feedback: {
+          low: "\u00c9 natural sentir entusiasmo com descobertas t\u00e3o impactantes. O pensamento cr\u00edtico n\u00e3o \u00e9 ceticismo \u2014 \u00e9 a capacidade de celebrar avan\u00e7os sem ignorar limites. Releia a se\u00e7\u00e3o sobre obst\u00e1culos.",
+          mid: "Voc\u00ea j\u00e1 equilibra esperan\u00e7a com realismo. Reforce esse olhar acompanhando fontes cient\u00edficas diretas ao inv\u00e9s de apenas manchetes.",
+          high: "Seu pensamento cr\u00edtico \u00e9 s\u00f3lido. Voc\u00ea est\u00e1 preparado(a) para acompanhar esse campo com o equil\u00edbrio necess\u00e1rio entre esperan\u00e7a e rigor.",
+        },
+      },
+      {
+        id: "futuro", label: "Vis\u00e3o de Futuro", icon: "\u{1F30D}", color: "#16A085",
+        tagline: "Como vejo o impacto dessas descobertas?",
+        questions: [
+          "Acredito que estamos no in\u00edcio de uma transforma\u00e7\u00e3o real na neuropsiquiatria \u2014 da gest\u00e3o de sintomas \u00e0 corre\u00e7\u00e3o de causas.",
+          "Entendo que democratizar o acesso (como o diplotyping) \u00e9 t\u00e3o importante quanto desenvolver a tecnologia em si.",
+          "Percebo que o c\u00e9rebro preserva plasticidade e pode responder a corre\u00e7\u00f5es moleculares mesmo ap\u00f3s anos de desenvolvimento comprometido.",
+          "Sinto que esse tipo de conhecimento deveria ser mais acess\u00edvel ao p\u00fablico geral, n\u00e3o apenas a especialistas.",
+        ],
+        feedback: {
+          low: "O futuro dessas terapias pode parecer distante, mas o artigo mostra que as provas de conceito j\u00e1 existem \u2014 a ponte est\u00e1 sendo constru\u00edda. Acompanhar essa evolu\u00e7\u00e3o \u00e9 uma forma de cidadania cient\u00edfica.",
+          mid: "Voc\u00ea j\u00e1 v\u00ea o potencial. Continue acompanhando \u2014 cada ensaio cl\u00ednico aprovado aproxima essas terapias da realidade de fam\u00edlias que vivem com autismo sindr\u00f4mico grave.",
+          high: "Sua vis\u00e3o de futuro \u00e9 informada e esperan\u00e7osa sem ser ing\u00eanua. Como diz o artigo: essa ponte, uma vez constru\u00edda, n\u00e3o ser\u00e1 desfeita.",
+        },
+      },
+    ],
+  },
+};
+
+/* ═══════ COMPONENTS ═══════ */
+
+function RadarChart({ scores, dimensions, accent }) {
+  const size = 260, center = size / 2, maxR = center - 32, levels = 5;
+  const step = (2 * Math.PI) / dimensions.length, start = -Math.PI / 2;
+  const pt = (i, v) => {
+    const a = start + i * step, r = (v / 5) * maxR;
+    return { x: center + r * Math.cos(a), y: center + r * Math.sin(a) };
+  };
+  const grid = Array.from({ length: levels }, (_, i) => {
+    const r = ((i + 1) / levels) * maxR;
+    return dimensions.map((_, j) => {
+      const a = start + j * step;
+      return `${center + r * Math.cos(a)},${center + r * Math.sin(a)}`;
+    }).join(" ");
+  });
+  const data = dimensions.map((d, i) => {
+    const p = pt(i, scores[d.id] || 0); return `${p.x},${p.y}`;
+  }).join(" ");
+  const labels = dimensions.map((d, i) => {
+    const a = start + i * step, r = maxR + 22;
+    return { x: center + r * Math.cos(a), y: center + r * Math.sin(a), icon: d.icon };
+  });
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", maxWidth: 260, margin: "0 auto", display: "block" }}>
+      {grid.map((pts, i) => <polygon key={i} points={pts} fill="none" stroke={i === levels - 1 ? "#bbb" : "#e8e4df"} strokeWidth={i === levels - 1 ? 1 : 0.5} />)}
+      {dimensions.map((_, i) => { const p = pt(i, 5); return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#e0dbd4" strokeWidth={0.5} />; })}
+      <polygon points={data} fill={`${accent}20`} stroke={accent} strokeWidth={2} />
+      {dimensions.map((d, i) => { const p = pt(i, scores[d.id] || 0); return <circle key={i} cx={p.x} cy={p.y} r={4.5} fill={d.color} stroke="#fff" strokeWidth={1.8} />; })}
+      {labels.map((lp, i) => <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="central" fontSize="15">{lp.icon}</text>)}
+    </svg>
+  );
+}
+
+function ScaleBtn({ value, selected, onClick, color }) {
+  const on = selected === value;
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={() => onClick(value)} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
+      style={{
+        width: 44, height: 44, borderRadius: "50%",
+        border: on ? `2.5px solid ${color}` : `2px solid ${hov ? "#bbb" : "#d4d4d4"}`,
+        background: on ? color : hov ? "#f0f0f0" : "#fafafa",
+        color: on ? "#fff" : "#888", fontWeight: 700, fontSize: 15,
+        transition: "all 0.2s ease",
+        transform: on ? "scale(1.12)" : "scale(1)",
+        boxShadow: on ? `0 2px 10px ${color}44` : "none", outline: "none",
+      }}>
+      {value}
+    </button>
+  );
+}
+
+/* ═══════ MAP FLOW ═══════ */
+
+function MapFlow({ mapData, onSwitchTab }) {
+  const [phase, setPhase] = useState("intro");
+  const [dimIdx, setDimIdx] = useState(0);
+  const [qIdx, setQIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [vis, setVis] = useState(true);
+
+  const dims = mapData.dimensions;
+  const total = dims.reduce((a, d) => a + d.questions.length, 0);
+  const answered = Object.keys(answers).length;
+  const dim = dims[dimIdx];
+  const key = dim ? `${dim.id}-${qIdx}` : "";
+
+  const go = (fn) => { setVis(false); setTimeout(() => { fn(); setVis(true); }, 150); };
+
+  const answer = (v) => {
+    setAnswers({ ...answers, [key]: v });
+    setTimeout(() => {
+      if (qIdx < dim.questions.length - 1) go(() => setQIdx(qIdx + 1));
+      else if (dimIdx < dims.length - 1) go(() => { setDimIdx(dimIdx + 1); setQIdx(0); });
+      else go(() => setPhase("results"));
+    }, 250);
+  };
+
+  const back = () => {
+    if (qIdx > 0) go(() => setQIdx(qIdx - 1));
+    else if (dimIdx > 0) go(() => { setDimIdx(dimIdx - 1); setQIdx(dims[dimIdx - 1].questions.length - 1); });
+  };
+
+  const scores = (() => {
+    const s = {};
+    dims.forEach(d => {
+      const vals = d.questions.map((_, qi) => answers[`${d.id}-${qi}`] || 0);
+      s[d.id] = vals.reduce((a, b) => a + b, 0) / vals.length;
+    });
+    return s;
+  })();
+
+  const avg = Object.values(scores).reduce((a, b) => a + b, 0) / dims.length;
+  const level = (sc) => sc <= 2.3 ? "low" : sc <= 3.7 ? "mid" : "high";
+  const accent = mapData.color;
+
+  const restart = () => go(() => { setPhase("intro"); setDimIdx(0); setQIdx(0); setAnswers({}); });
+
+  const card = {
+    maxWidth: 480, width: "100%", margin: "0 auto",
+    padding: "32px 24px", background: "#fffdf9",
+    borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+    opacity: vis ? 1 : 0, transition: "opacity 0.2s ease",
+  };
+
+  if (phase === "intro") return (
+    <div className="fade-up" style={{ padding: "8px 0" }}>
+      <div style={card}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: 16, background: `${accent}12`, color: accent, fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>
+            {mapData.icon} {mapData.label}
+          </div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.4, margin: "0 0 4px" }}>Mapa de Autorreflexão</h2>
+          <p style={{ fontSize: 11, color: "#999", margin: "0 0 4px" }}>Terapias de RNA para Autismo</p>
+          <p style={{ fontSize: 13, color: "#777", fontStyle: "italic", margin: "0 0 16px" }}>{mapData.subtitle}</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7, color: "#555", margin: "0 0 20px" }}>{mapData.intro}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "center", marginBottom: 20 }}>
+            {dims.map(d => (
+              <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 8, background: `${d.color}08`, border: `1px solid ${d.color}15`, width: "100%", maxWidth: 300 }}>
+                <span style={{ fontSize: 18 }}>{d.icon}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: d.color }}>{d.label}</span>
+                <span style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginLeft: "auto" }}>{d.tagline}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: "#ccc", margin: "0 0 16px" }}>12 perguntas · ~3 minutos</p>
+          <button onClick={() => go(() => setPhase("quiz"))} style={{
+            width: "100%", maxWidth: 300, padding: "13px 0", background: accent, color: "#fff",
+            border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700,
+            boxShadow: `0 3px 12px ${accent}40`, transition: "filter 0.3s",
+          }}
+            onMouseOver={e => e.target.style.filter = "brightness(0.9)"}
+            onMouseOut={e => e.target.style.filter = "none"}
+          >Começar →</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (phase === "quiz") {
+    const gi = dims.slice(0, dimIdx).reduce((a, d) => a + d.questions.length, 0) + qIdx + 1;
+    return (
+      <div style={{ padding: "8px 0" }}>
+        <div style={{ maxWidth: 480, margin: "0 auto 12px", height: 3, background: "#e0dbd4", borderRadius: 2 }}>
+          <div style={{ height: "100%", width: `${(answered / total) * 100}%`, background: dim.color, transition: "width 0.4s", borderRadius: 2 }} />
+        </div>
+        <div style={card}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 22 }}>{dim.icon}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: dim.color, letterSpacing: 1, textTransform: "uppercase" }}>{dim.label}</span>
+          </div>
+          <p style={{ fontSize: 10, color: "#bbb", fontStyle: "italic", margin: "0 0 20px" }}>{dim.tagline}</p>
+          <p style={{ fontSize: 10, color: "#ccc", fontWeight: 600, margin: "0 0 4px" }}>Pergunta {gi} de {total}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.75, color: "#222", fontWeight: 500, margin: "0 0 24px" }}>{dim.questions[qIdx]}</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+            {[1,2,3,4,5].map(v => <ScaleBtn key={v} value={v} selected={answers[key]} onClick={answer} color={dim.color} />)}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#aaa", maxWidth: 250, margin: "0 auto" }}>
+            <span>Discordo</span><span>Concordo</span>
+          </div>
+          {(dimIdx > 0 || qIdx > 0) && (
+            <div style={{ textAlign: "center", marginTop: 20 }}>
+              <button onClick={back} style={{ background: "none", border: "none", color: "#aaa", fontSize: 12 }}>← Voltar</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "8px 0", opacity: vis ? 1 : 0, transition: "opacity 0.5s" }}>
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", padding: "28px 20px", background: "#fffdf9", borderRadius: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.06)", marginBottom: 12 }}>
+          <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 16, background: `${accent}12`, color: accent, fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>
+            {mapData.icon} {mapData.label} — RESULTADO
+          </div>
+          <h3 style={{ fontSize: 16, color: "#1a1a1a", margin: "0 0 4px" }}>{mapData.resultTitle}</h3>
+          <p style={{ fontSize: 11, color: "#888", fontStyle: "italic", margin: "0 0 16px" }}>{mapData.resultSubtitle}</p>
+          <RadarChart scores={scores} dimensions={dims} accent={accent} />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 14 }}>
+            {dims.map(d => (
+              <span key={d.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 12, background: `${d.color}10`, fontSize: 11, color: d.color, fontWeight: 600 }}>
+                {d.icon} {scores[d.id].toFixed(1)}
+              </span>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, padding: "7px 14px", background: mapData.key === "antes" ? "#f3eef8" : "#fdeaea", borderRadius: 8, display: "inline-block" }}>
+            <span style={{ fontSize: 10, color: "#666" }}>Média: </span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: accent }}>{avg.toFixed(1)}</span>
+            <span style={{ fontSize: 10, color: "#666" }}> / 5.0</span>
+          </div>
+        </div>
+
+        {dims.map(d => {
+          const sc = scores[d.id], bw = (sc / 5) * 100;
+          return (
+            <div key={d.id} style={{ padding: "16px 18px 20px", background: "#fffdf9", borderRadius: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.04)", marginBottom: 10, borderLeft: `3px solid ${d.color}` }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 17 }}>{d.icon}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#222" }}>{d.label}</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: d.color }}>{sc.toFixed(1)}</span>
+              </div>
+              <div style={{ height: 4, background: "#eee", borderRadius: 2, marginBottom: 10, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${bw}%`, background: `linear-gradient(90deg, ${d.color}88, ${d.color})`, borderRadius: 2, transition: "width 0.8s" }} />
+              </div>
+              <p style={{ fontSize: 12, lineHeight: 1.7, color: "#555", margin: 0 }}>{d.feedback[level(sc)]}</p>
+            </div>
+          );
+        })}
+
+        <div style={{ padding: "22px 20px", background: accent, borderRadius: 12, textAlign: "center", marginBottom: 10, boxShadow: `0 3px 14px ${accent}28` }}>
+          <p style={{ fontSize: 13, color: "#fff", lineHeight: 1.7, margin: 0, fontWeight: 500 }}>{mapData.cta}</p>
+          {mapData.ctaButton && <p style={{ fontSize: 15, color: "#fff", margin: "12px 0 0", fontWeight: 700 }}>{mapData.ctaButton}</p>}
+          {mapData.key === "depois" && (
+            <p style={{ fontSize: 11, color: "#ffffffcc", lineHeight: 1.7, margin: "12px 0 0" }}>
+              <strong>Quer acompanhar mais conte\u00fados como este?</strong> Inscreva-se na newsletter do Psicologias em Dia.
+            </p>
+          )}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: 10, padding: "8px 0" }}>
+          <button onClick={restart} style={{ background: "#fffdf9", border: "1.5px solid #d4cfc8", borderRadius: 8, padding: "9px 20px", fontSize: 12, fontWeight: 600, color: "#999", transition: "all 0.3s" }}
+            onMouseOver={e => { e.target.style.borderColor = accent; e.target.style.color = accent; }}
+            onMouseOut={e => { e.target.style.borderColor = "#d4cfc8"; e.target.style.color = "#999"; }}
+          >↻ Refazer</button>
+          {mapData.key === "antes" && (
+            <button onClick={() => onSwitchTab("depois")} style={{ background: MAPS.depois.color, border: "none", borderRadius: 8, padding: "9px 20px", fontSize: 12, fontWeight: 700, color: "#fff", boxShadow: `0 2px 8px ${MAPS.depois.color}40`, transition: "filter 0.3s" }}
+              onMouseOver={e => e.target.style.filter = "brightness(0.9)"}
+              onMouseOut={e => e.target.style.filter = "none"}
+            >{MAPS.depois.icon} Mapa Depois →</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════ MAIN ═══════ */
+
+function App() {
+  const [activeTab, setActiveTab] = useState("antes");
+  const wrapRef = useAutoResize();
+
+  return (
+    <div ref={wrapRef} style={{ background: "#f7f3ee", padding: "16px 12px 12px" }}>
+      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 6 }}>
+          <p style={{ fontSize: 9, color: "#bbb", letterSpacing: 1.5, textTransform: "uppercase", margin: 0 }}>Psicologias em Dia · Sentir, Pensar e Transformar</p>
+        </div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 4, justifyContent: "center" }}>
+          {["antes", "depois"].map(t => {
+            const m = MAPS[t], active = activeTab === t;
+            return (
+              <button key={t} onClick={() => setActiveTab(t)} style={{
+                padding: "9px 18px", borderRadius: 8,
+                background: active ? m.color : "#fffdf9",
+                color: active ? "#fff" : "#aaa",
+                border: active ? "none" : "1.5px solid #e0dbd4",
+                fontSize: 11, fontWeight: 700,
+                boxShadow: active ? `0 2px 10px ${m.color}28` : "none",
+                transition: "all 0.25s ease",
+              }}>
+                {m.tab}
+              </button>
+            );
+          })}
+        </div>
+        <MapFlow key={activeTab} mapData={MAPS[activeTab]} onSwitchTab={setActiveTab} />
+        <p style={{ textAlign: "center", fontSize: 9, color: "#ccc", marginTop: 4, paddingBottom: 8 }}>
+          © Psicologias em Dia · Ferramenta de autorreflexão — não substitui avaliação profissional.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
