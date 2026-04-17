@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mapa de Autorreflexão — A Tempestade Perfeita | Psicologias em Dia</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{font-family:'Libre Baskerville','Georgia',serif;-webkit-font-smoothing:antialiased;background:#f7f3ee;overflow-x:hidden}
+  button{font-family:inherit;cursor:pointer}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .fade-up{animation:fadeUp 0.3s ease forwards}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+function useAutoResize() {
+  const ref = useRef(null);
+  const notify = useCallback(() => {
+    if (!ref.current) return;
+    const h = ref.current.scrollHeight + 16;
+    window.parent.postMessage({ type: "resize", height: h }, "*");
+    try { if (window.frameElement) window.frameElement.style.height = h + "px"; } catch(e) {}
+  }, []);
+  useEffect(() => {
+    notify();
+    const obs = new MutationObserver(notify);
+    if (ref.current) obs.observe(ref.current, { childList: true, subtree: true, attributes: true });
+    window.addEventListener("resize", notify);
+    return () => { obs.disconnect(); window.removeEventListener("resize", notify); };
+  }, [notify]);
+  return ref;
+}
+
+const MAPS = {
+  antes: {
+    key: "antes",
+    label: "ANTES DA LEITURA",
+    tab: "\u{1F50D} Antes",
+    color: "#6B2D5B",
+    icon: "\u{1F50D}",
+    subtitle: "Como voc\u00ea lida com v\u00ednculos, atalhos e atrito?",
+    intro: "Responda com honestidade \u2014 sem pensar demais. O objetivo \u00e9 um retrato sincero do seu momento.",
+    resultTitle: "Seu Ponto de Partida",
+    resultSubtitle: "Um retrato antes da leitura.",
+    cta: "Agora leia o artigo. Depois, volte e responda o mapa \u201CDepois\u201D.",
+    ctaButton: "\u2193 Boa leitura! \u2193",
+    dims: [
+      {
+        id: "atalho", label: "Cren\u00e7a no Atalho", icon: "\u{1F48A}", color: "#6B2D5B",
+        tagline: "Busco solu\u00e7\u00f5es r\u00e1pidas?",
+        questions: [
+          "Quando enfrento dificuldade relacional, minha primeira rea\u00e7\u00e3o \u00e9 buscar algo que resolva r\u00e1pido.",
+          "Costumo sentir que, se existisse um \u201Cremédio\u201D para a conviv\u00eancia ser mais leve, eu tomaria.",
+          "Tenho dificuldade em aceitar que v\u00ednculos profundos exigem tempo, atrito e paci\u00eancia.",
+          "Confundo al\u00edvio imediato (como rolar o feed ou tomar um calmante) com transforma\u00e7\u00e3o real.",
+        ],
+        feedback: {
+          low: "Voc\u00ea parece compreender que v\u00ednculos n\u00e3o t\u00eam atalho. Isso \u00e9 raro e valioso. Veja no artigo como essa consci\u00eancia se conecta \u00e0 ideia de \u201Cponte, n\u00e3o destino\u201D.",
+          mid: "Voc\u00ea oscila entre a paci\u00eancia e a busca por al\u00edvio r\u00e1pido \u2014 isso \u00e9 humano. O artigo ajuda a nomear essa tens\u00e3o com precis\u00e3o.",
+          high: "A busca por atalhos emocionais \u00e9 compreens\u00edvel num mundo acelerado. O artigo mostra por que o medicamento abre a porta, mas n\u00e3o entra no c\u00f4modo por voc\u00ea.",
+        },
+      },
+      {
+        id: "tecido", label: "Tecido Social", icon: "\u{1F9F6}", color: "#2E75B6",
+        tagline: "Como est\u00e3o meus fios?",
+        questions: [
+          "Mantenho rela\u00e7\u00f5es que resistiram ao tempo, ao atrito e a pelo menos uma crise.",
+          "Tenho espa\u00e7os de conviv\u00eancia onde meu corpo est\u00e1 presente \u2014 n\u00e3o apenas meu perfil.",
+          "Sinto que fa\u00e7o parte de algo maior que meu n\u00facleo imediato (comunidade, grupo, vizinhan\u00e7a).",
+          "Consigo citar ao menos uma pessoa que me conhece pelo nome e pela hist\u00f3ria, n\u00e3o pelo feed.",
+        ],
+        feedback: {
+          low: "O artigo descreve o tecido social como \u201Ca roupa que veste o processo de virar quem somos\u201D. Se seus fios est\u00e3o esgar\u00e7ados, a leitura pode ajudar a entender por que \u2014 e por onde come\u00e7ar a retec\u00ea-los.",
+          mid: "Voc\u00ea tem fios, mas talvez sinta que alguns est\u00e3o finos. O artigo mostra que presença f\u00edsica, tempo compartilhado e atrito superado s\u00e3o os ingredientes que nenhum algoritmo replica.",
+          high: "Seu tecido social parece bem tramado. Como Vygotsky ensina, somos constru\u00e7\u00e3o em andamento \u2014 e constru\u00e7\u00f5es pedem exatamente o que voc\u00ea j\u00e1 cultiva: tempo e presen\u00e7a.",
+        },
+      },
+      {
+        id: "ritmo", label: "Tempo do Corpo vs. Tela", icon: "\u26A1", color: "#E67E22",
+        tagline: "Respeito meu ritmo?",
+        questions: [
+          "Percebo quando estou respondendo no tempo da tela (imediato) ao inv\u00e9s do tempo do corpo (cadenciado).",
+          "Consigo ficar em sil\u00eancio sem sentir urg\u00eancia de preencher o vazio com conte\u00fado.",
+          "Reconhe\u00e7o sinais de cansa\u00e7o que v\u00eam do descompasso entre velocidade digital e ritmo biol\u00f3gico.",
+          "Tenho momentos no dia em que estou presente sem est\u00edmulo de tela.",
+        ],
+        feedback: {
+          low: "O artigo chama de \u201Ctempestade perfeita\u201D o encontro entre biologia lenta e comunica\u00e7\u00e3o acelerada. Se voc\u00ea sente cansa\u00e7o cr\u00f4nico, talvez esteja nesse descompasso. Preste aten\u00e7\u00e3o nessa se\u00e7\u00e3o.",
+          mid: "Voc\u00ea j\u00e1 percebe o atrito entre ritmos. A leitura pode ajudar a nomear esse descompasso e a proteger seu tempo de corpo.",
+          high: "Sua consci\u00eancia sobre o ritmo \u00e9 um escudo real. O artigo refor\u00e7a: n\u00e3o \u00e9 romantismo, \u00e9 neurobiologia \u2014 presen\u00e7a \u00e9 onde a oxitocina natural funciona.",
+        },
+      },
+    ],
+  },
+  depois: {
+    key: "depois",
+    label: "AP\u00d3S A LEITURA",
+    tab: "\u{1F331} Depois",
+    color: "#1B6B4A",
+    icon: "\u{1F331}",
+    subtitle: "O que a leitura moveu em voc\u00ea?",
+    intro: "Agora que leu, responda com sinceridade. Observe o que mudou \u2014 mesmo sutilmente.",
+    resultTitle: "Seu Mapa P\u00f3s-Leitura",
+    resultSubtitle: "Compare com o anterior. Onde a leitura tocou voc\u00ea?",
+    cta: "As diferen\u00e7as revelam onde a leitura gerou movimento. Leve essas reflex\u00f5es al\u00e9m da tela.",
+    ctaButton: null,
+    dims: [
+      {
+        id: "complexidade", label: "Consci\u00eancia da Complexidade", icon: "\u{1F9E0}", color: "#1B6B4A",
+        tagline: "Entendo por que v\u00ednculos n\u00e3o se engarrafam?",
+        questions: [
+          "Compreendo que a oxitocina n\u00e3o \u00e9 \u201Chorm\u00f4nio do amor universal\u201D \u2014 \u00e9 horm\u00f4nio de coes\u00e3o, com fronteiras.",
+          "Entendo por que aumentar artificialmente a lealdade intragrupo pode piorar a polariza\u00e7\u00e3o.",
+          "Percebo que medicamento \u00e9 ponte, n\u00e3o destino \u2014 ele abre a porta, mas n\u00e3o entra no c\u00f4modo por mim.",
+          "Reconhe\u00e7o que cultura n\u00e3o cabe em frasco porque \u00e9 tempo compartilhado.",
+        ],
+        feedback: {
+          low: "Esses conceitos s\u00e3o novos pra maioria. Releia a se\u00e7\u00e3o sobre o paradoxo da oxitocina e o estudo de De Dreu \u2014 \u00e9 a chave do artigo.",
+          mid: "Voc\u00ea absorveu os fundamentos. Para consolidar: tente explicar a algu\u00e9m por que \u201Cengarrafar a cultura\u201D \u00e9 imposs\u00edvel. Ensinar \u00e9 a melhor forma de aprender.",
+          high: "Sua compreens\u00e3o da complexidade \u00e9 s\u00f3lida. Voc\u00ea entende que o atalho qu\u00edmico para a conviv\u00eancia \u00e9 uma ilus\u00e3o \u2014 e que isso n\u00e3o diminui o valor da farm\u00e1cia, mas a liberta de uma press\u00e3o imposs\u00edvel.",
+        },
+      },
+      {
+        id: "alteridade", label: "M\u00fasculo da Alteridade", icon: "\u{1F6E1}\uFE0F", color: "#C0392B",
+        tagline: "Consigo conviver com o diferente?",
+        questions: [
+          "Entendo que o atrito com o outro n\u00e3o \u00e9 falha de produto \u2014 \u00e9 parte do humano.",
+          "Percebo que, se depender de uma subst\u00e2ncia para tolerar o diferente, atrofio meu m\u00fasculo de conviv\u00eancia.",
+          "Reconhe\u00e7o que bolhas digitais podem refor\u00e7ar a l\u00f3gica de tribos que a oxitocina j\u00e1 favorece naturalmente.",
+          "Consigo ficar perto de algu\u00e9m que pensa diferente sem sentir que preciso converter ou fugir.",
+        ],
+        feedback: {
+          low: "Han diz que nosso tempo rejeita a negatividade como se fosse defeito. O artigo mostra que \u00e9 no atrito que se desenvolve a capacidade de conviver. Esse m\u00fasculo precisa de exerc\u00edcio, n\u00e3o de anestesia.",
+          mid: "Voc\u00ea j\u00e1 percebe o valor do atrito. Reforce: da pr\u00f3xima vez que sentir desconforto com uma opini\u00e3o diferente, observe se \u00e9 amea\u00e7a real ou apenas o m\u00fasculo da alteridade pedindo treino.",
+          high: "Sua capacidade de conviver com o diferente \u00e9 um recurso raro. Como diz o artigo: coes\u00e3o sem alteridade \u00e9 proximidade de alguns paga com dist\u00e2ncia de outros.",
+        },
+      },
+      {
+        id: "escala", label: "EU SOU, EU SEI, EU ESTOU", icon: "\u{1F9ED}", color: "#2E75B6",
+        tagline: "Encontro equil\u00edbrio no trip\u00e9?",
+        questions: [
+          "Reconhe\u00e7o em mim algo que n\u00e3o se reduz ao grupo, ao diagn\u00f3stico ou ao perfil digital (EU SOU).",
+          "Consigo sustentar o saber sem confundi-lo com certeza \u2014 aceito que posso estar errado (EU SEI).",
+          "Entendo que existo sempre entre outros e que a coexist\u00eancia \u00e9 condi\u00e7\u00e3o, n\u00e3o op\u00e7\u00e3o (EU ESTOU).",
+          "Percebo que retirar qualquer um desses apoios faz a estrutura toda tombar.",
+        ],
+        feedback: {
+          low: "A Escala de Cuidado e Conhecimento \u00e9 apresentada como b\u00fassola, n\u00e3o como destino. Releia essa se\u00e7\u00e3o com calma \u2014 ela organiza muitas das tens\u00f5es que o artigo levanta.",
+          mid: "Voc\u00ea j\u00e1 reconhece os tr\u00eas apoios. O desafio \u00e9 mant\u00ea-los em equil\u00edbrio: individua\u00e7\u00e3o sem isolamento, saber sem arrog\u00e2ncia, coexist\u00eancia sem dissolu\u00e7\u00e3o.",
+          high: "Voc\u00ea compreende o trip\u00e9. Como diz o artigo: o cuidado sustent\u00e1vel nasce do conhecimento denso sobre nossa pr\u00f3pria natureza \u2014 e da disposi\u00e7\u00e3o de conviver com o que ele revela de complexo.",
+        },
+      },
+    ],
+  },
+};
+
+/* ═══════ COMPONENTS ═══════ */
+
+function RadarChart({ scores, dims, accent }) {
+  const size = 230, center = size / 2, maxR = center - 28, levels = 5;
+  const step = (2 * Math.PI) / dims.length, start = -Math.PI / 2;
+  const pt = (i, v) => {
+    const a = start + i * step, r = (v / 5) * maxR;
+    return { x: center + r * Math.cos(a), y: center + r * Math.sin(a) };
+  };
+  const grid = Array.from({ length: levels }, (_, i) => {
+    const r = ((i + 1) / levels) * maxR;
+    return dims.map((_, j) => {
+      const a = start + j * step;
+      return `${center + r * Math.cos(a)},${center + r * Math.sin(a)}`;
+    }).join(" ");
+  });
+  const data = dims.map((d, i) => { const p = pt(i, scores[d.id] || 0); return `${p.x},${p.y}`; }).join(" ");
+  const labels = dims.map((d, i) => {
+    const a = start + i * step, r = maxR + 20;
+    return { x: center + r * Math.cos(a), y: center + r * Math.sin(a), icon: d.icon };
+  });
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", maxWidth: 230, margin: "0 auto", display: "block" }}>
+      {grid.map((pts, i) => <polygon key={i} points={pts} fill="none" stroke={i === levels - 1 ? "#aaa" : "#d6d1cb"} strokeWidth={i === levels - 1 ? 1 : 0.5} />)}
+      {dims.map((_, i) => { const p = pt(i, 5); return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#d6d1cb" strokeWidth={0.5} />; })}
+      <polygon points={data} fill={`${accent}20`} stroke={accent} strokeWidth={2} />
+      {dims.map((d, i) => { const p = pt(i, scores[d.id] || 0); return <circle key={i} cx={p.x} cy={p.y} r={4} fill={d.color} stroke="#fff" strokeWidth={1.5} />; })}
+      {labels.map((lp, i) => <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="central" fontSize="14">{lp.icon}</text>)}
+    </svg>
+  );
+}
+
+function ScaleBtn({ value, selected, onClick, color }) {
+  const on = selected === value;
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={() => onClick(value)} onMouseOver={() => setHov(true)} onMouseOut={() => setHov(false)}
+      style={{
+        width: 42, height: 42, borderRadius: "50%",
+        border: on ? `2.5px solid ${color}` : `2px solid ${hov ? "#999" : "#bbb"}`,
+        background: on ? color : hov ? "#f0f0f0" : "#fafafa",
+        color: on ? "#fff" : "#666", fontWeight: 700, fontSize: 14,
+        transition: "all 0.2s ease",
+        transform: on ? "scale(1.1)" : "scale(1)",
+        boxShadow: on ? `0 2px 8px ${color}44` : "none", outline: "none",
+      }}>
+      {value}
+    </button>
+  );
+}
+
+/* ═══════ MAP FLOW ═══════ */
+
+function MapFlow({ mapData, onSwitchTab }) {
+  const [phase, setPhase] = useState("intro");
+  const [dimIdx, setDimIdx] = useState(0);
+  const [qIdx, setQIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [vis, setVis] = useState(true);
+
+  const dims = mapData.dims;
+  const total = dims.reduce((a, d) => a + d.questions.length, 0);
+  const answered = Object.keys(answers).length;
+  const dim = dims[dimIdx];
+  const key = dim ? `${dim.id}-${qIdx}` : "";
+
+  const go = (fn) => { setVis(false); setTimeout(() => { fn(); setVis(true); }, 130); };
+
+  const answer = (v) => {
+    setAnswers({ ...answers, [key]: v });
+    setTimeout(() => {
+      if (qIdx < dim.questions.length - 1) go(() => setQIdx(qIdx + 1));
+      else if (dimIdx < dims.length - 1) go(() => { setDimIdx(dimIdx + 1); setQIdx(0); });
+      else go(() => setPhase("results"));
+    }, 220);
+  };
+
+  const back = () => {
+    if (qIdx > 0) go(() => setQIdx(qIdx - 1));
+    else if (dimIdx > 0) go(() => { setDimIdx(dimIdx - 1); setQIdx(dims[dimIdx - 1].questions.length - 1); });
+  };
+
+  const scores = (() => {
+    const s = {};
+    dims.forEach(d => {
+      const vals = d.questions.map((_, qi) => answers[`${d.id}-${qi}`] || 0);
+      s[d.id] = vals.reduce((a, b) => a + b, 0) / vals.length;
+    });
+    return s;
+  })();
+
+  const avg = Object.values(scores).reduce((a, b) => a + b, 0) / dims.length;
+  const level = (sc) => sc <= 2.3 ? "low" : sc <= 3.7 ? "mid" : "high";
+  const accent = mapData.color;
+
+  const restart = () => go(() => { setPhase("intro"); setDimIdx(0); setQIdx(0); setAnswers({}); });
+
+  const card = {
+    maxWidth: 460, width: "100%", margin: "0 auto",
+    padding: "24px 20px", background: "#fffdf9",
+    borderRadius: 14, boxShadow: "0 3px 18px rgba(0,0,0,0.05)",
+    opacity: vis ? 1 : 0, transition: "opacity 0.2s ease",
+  };
+
+  /* ── INTRO (compacto) ── */
+  if (phase === "intro") return (
+    <div className="fade-up" style={{ padding: "6px 0" }}>
+      <div style={card}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "inline-block", padding: "3px 12px", borderRadius: 14, background: `${accent}12`, color: accent, fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>
+            {mapData.icon} {mapData.label}
+          </div>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.35, margin: "0 0 3px" }}>Mapa de Autorreflexão</h2>
+          <p style={{ fontSize: 11, color: "#555", margin: "0 0 3px" }}>A Tempestade Perfeita</p>
+          <p style={{ fontSize: 13, color: "#555", fontStyle: "italic", margin: "0 0 12px" }}>{mapData.subtitle}</p>
+          <p style={{ fontSize: 13, lineHeight: 1.65, color: "#444", margin: "0 0 14px" }}>{mapData.intro}</p>
+
+          {/* Dimensões em linha compacta */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+            {dims.map(d => (
+              <span key={d.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: `${d.color}10`, fontSize: 11, color: d.color, fontWeight: 600, border: `1px solid ${d.color}18` }}>
+                {d.icon} {d.label}
+              </span>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 11, color: "#777", margin: "0 0 12px" }}>12 perguntas · ~3 min</p>
+          <button onClick={() => go(() => setPhase("quiz"))} style={{
+            width: "100%", maxWidth: 260, padding: "12px 0", background: accent, color: "#fff",
+            border: "none", borderRadius: 9, fontSize: 14, fontWeight: 700,
+            boxShadow: `0 3px 10px ${accent}40`, transition: "filter 0.3s",
+          }}
+            onMouseOver={e => e.target.style.filter = "brightness(0.9)"}
+            onMouseOut={e => e.target.style.filter = "none"}
+          >Começar →</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── QUIZ (compacto) ── */
+  if (phase === "quiz") {
+    const gi = dims.slice(0, dimIdx).reduce((a, d) => a + d.questions.length, 0) + qIdx + 1;
+    return (
+      <div style={{ padding: "6px 0" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto 8px", height: 3, background: "#d6d1cb", borderRadius: 2 }}>
+          <div style={{ height: "100%", width: `${(answered / total) * 100}%`, background: dim.color, transition: "width 0.4s", borderRadius: 2 }} />
+        </div>
+        <div style={card}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+            <span style={{ fontSize: 20 }}>{dim.icon}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: dim.color, letterSpacing: 1, textTransform: "uppercase" }}>{dim.label}</span>
+            <span style={{ fontSize: 11, color: "#777", marginLeft: "auto" }}>{gi}/{total}</span>
+          </div>
+          <p style={{ fontSize: 11, color: "#666", fontStyle: "italic", margin: "0 0 16px" }}>{dim.tagline}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "#222", fontWeight: 500, margin: "0 0 20px" }}>{dim.questions[qIdx]}</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 7, marginBottom: 6 }}>
+            {[1,2,3,4,5].map(v => <ScaleBtn key={v} value={v} selected={answers[key]} onClick={answer} color={dim.color} />)}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#777", maxWidth: 230, margin: "0 auto" }}>
+            <span>Discordo</span><span>Concordo</span>
+          </div>
+          {(dimIdx > 0 || qIdx > 0) && (
+            <div style={{ textAlign: "center", marginTop: 14 }}>
+              <button onClick={back} style={{ background: "none", border: "none", color: "#777", fontSize: 12 }}>← Voltar</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── RESULTS (compacto) ── */
+  return (
+    <div style={{ padding: "6px 0", opacity: vis ? 1 : 0, transition: "opacity 0.5s" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto" }}>
+        {/* Radar header */}
+        <div style={{ textAlign: "center", padding: "22px 18px", background: "#fffdf9", borderRadius: 14, boxShadow: "0 3px 18px rgba(0,0,0,0.05)", marginBottom: 10 }}>
+          <div style={{ display: "inline-block", padding: "3px 10px", borderRadius: 14, background: `${accent}12`, color: accent, fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>
+            {mapData.icon} {mapData.label} — RESULTADO
+          </div>
+          <h3 style={{ fontSize: 15, color: "#1a1a1a", margin: "0 0 3px" }}>{mapData.resultTitle}</h3>
+          <p style={{ fontSize: 11, color: "#666", fontStyle: "italic", margin: "0 0 12px" }}>{mapData.resultSubtitle}</p>
+          <RadarChart scores={scores} dims={dims} accent={accent} />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center", marginTop: 10 }}>
+            {dims.map(d => (
+              <span key={d.id} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "3px 8px", borderRadius: 10, background: `${d.color}10`, fontSize: 11, color: d.color, fontWeight: 600 }}>
+                {d.icon} {scores[d.id].toFixed(1)}
+              </span>
+            ))}
+          </div>
+          <div style={{ marginTop: 10, padding: "5px 12px", background: mapData.key === "antes" ? "#f3edf5" : "#e8f5ee", borderRadius: 7, display: "inline-block" }}>
+            <span style={{ fontSize: 11, color: "#555" }}>Média: </span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: accent }}>{avg.toFixed(1)}</span>
+            <span style={{ fontSize: 11, color: "#555" }}> / 5.0</span>
+          </div>
+        </div>
+
+        {/* Feedbacks */}
+        {dims.map(d => {
+          const sc = scores[d.id], bw = (sc / 5) * 100;
+          return (
+            <div key={d.id} style={{ padding: "14px 16px 16px", background: "#fffdf9", borderRadius: 11, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", marginBottom: 8, borderLeft: `3px solid ${d.color}` }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ fontSize: 15 }}>{d.icon}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#222" }}>{d.label}</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: d.color }}>{sc.toFixed(1)}</span>
+              </div>
+              <div style={{ height: 3, background: "#ddd", borderRadius: 2, marginBottom: 8, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${bw}%`, background: `linear-gradient(90deg, ${d.color}88, ${d.color})`, borderRadius: 2, transition: "width 0.8s" }} />
+              </div>
+              <p style={{ fontSize: 12, lineHeight: 1.65, color: "#444", margin: 0 }}>{d.feedback[level(sc)]}</p>
+            </div>
+          );
+        })}
+
+        {/* CTA */}
+        <div style={{ padding: "18px 18px", background: accent, borderRadius: 11, textAlign: "center", marginBottom: 8, boxShadow: `0 2px 10px ${accent}28` }}>
+          <p style={{ fontSize: 13, color: "#fff", lineHeight: 1.65, margin: 0, fontWeight: 500 }}>{mapData.cta}</p>
+          {mapData.ctaButton && <p style={{ fontSize: 15, color: "#fff", margin: "10px 0 0", fontWeight: 700 }}>{mapData.ctaButton}</p>}
+          {mapData.key === "depois" && (
+            <p style={{ fontSize: 12, color: "#ffffffdd", lineHeight: 1.65, margin: "10px 0 0", fontStyle: "italic" }}>
+              Nenhuma p\u00edlula far\u00e1, por n\u00f3s, o trabalho lento de nos tornarmos capazes de conviver.
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, padding: "6px 0" }}>
+          <button onClick={restart} style={{ background: "#fffdf9", border: "1.5px solid #bbb", borderRadius: 7, padding: "8px 18px", fontSize: 12, fontWeight: 600, color: "#666", transition: "all 0.3s" }}
+            onMouseOver={e => { e.target.style.borderColor = accent; e.target.style.color = accent; }}
+            onMouseOut={e => { e.target.style.borderColor = "#bbb"; e.target.style.color = "#666"; }}
+          >↻ Refazer</button>
+          {mapData.key === "antes" && (
+            <button onClick={() => onSwitchTab("depois")} style={{ background: MAPS.depois.color, border: "none", borderRadius: 7, padding: "8px 18px", fontSize: 12, fontWeight: 700, color: "#fff", boxShadow: `0 2px 6px ${MAPS.depois.color}40`, transition: "filter 0.3s" }}
+              onMouseOver={e => e.target.style.filter = "brightness(0.9)"}
+              onMouseOut={e => e.target.style.filter = "none"}
+            >{MAPS.depois.icon} Mapa Depois →</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════ MAIN ═══════ */
+
+function App() {
+  const [activeTab, setActiveTab] = useState("antes");
+  const wrapRef = useAutoResize();
+
+  return (
+    <div ref={wrapRef} style={{ background: "#f7f3ee", padding: "12px 10px 8px" }}>
+      <div style={{ maxWidth: 500, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 4 }}>
+          <p style={{ fontSize: 10, color: "#666", letterSpacing: 1.5, textTransform: "uppercase", margin: 0 }}>Psicologias em Dia · Sentir, Pensar e Transformar</p>
+        </div>
+        <div style={{ display: "flex", gap: 5, marginBottom: 3, justifyContent: "center" }}>
+          {["antes", "depois"].map(t => {
+            const m = MAPS[t], active = activeTab === t;
+            return (
+              <button key={t} onClick={() => setActiveTab(t)} style={{
+                padding: "8px 16px", borderRadius: 7,
+                background: active ? m.color : "#fffdf9",
+                color: active ? "#fff" : "#777",
+                border: active ? "none" : "1.5px solid #ccc",
+                fontSize: 11, fontWeight: 700,
+                boxShadow: active ? `0 2px 8px ${m.color}28` : "none",
+                transition: "all 0.25s ease",
+              }}>
+                {m.tab}
+              </button>
+            );
+          })}
+        </div>
+        <MapFlow key={activeTab} mapData={MAPS[activeTab]} onSwitchTab={setActiveTab} />
+        <p style={{ textAlign: "center", fontSize: 10, color: "#666", marginTop: 3, paddingBottom: 6 }}>
+          © Psicologias em Dia · Ferramenta de autorreflexão — não substitui avaliação profissional.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+</body>
+</html>
